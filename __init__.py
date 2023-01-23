@@ -231,9 +231,14 @@ class shaderSetup():
             node_imTexDisplacement = shaderSetup.createNode(mat, "ShaderNodeTexImage", "node_imTexDisplacement", (-800,300-(300*imported_tex_nodes)))
             node_imTexDisplacement.image = displacementTexture
             node_imTexDisplacement.interpolation = 'Smart'
-            node_displacement = shaderSetup.createNode(mat, "ShaderNodeDisplacement", "node_displacement", (-200,-600))
-            links.new(node_imTexDisplacement.outputs['Color'], node_displacement.inputs['Height'])
-            links.new(node_displacement.outputs['Displacement'], node_output.inputs['Displacement'])
+            #node_displacement = shaderSetup.createNode(mat, "ShaderNodeDisplacement", "node_displacement", (-200,-600))
+            #links.new(node_imTexDisplacement.outputs['Color'], node_displacement.inputs['Height'])
+            # links.new(node_displacement.outputs['Displacement'], node_output.inputs['Displacement'])
+            node_bump = shaderSetup.createNode(mat, "ShaderNodeBump", "node_bump", (-500,200-(300*imported_tex_nodes)))
+            node_bump.inputs['Strength'].default_value = 0.075
+            node_bump.inputs['Distance'].default_value = 0.05
+            links.new(node_imTexDisplacement.outputs['Color'], node_bump.inputs['Height'])
+            links.new(node_bump.outputs['Normal'], node_principled.inputs['Normal'])
             links.new(node_mapping.outputs['Vector'], node_imTexDisplacement.inputs['Vector'])
             shaderSetup.setMapping(node_imTexDisplacement)
             imported_tex_nodes += 1
@@ -331,7 +336,7 @@ class properties(PropertyGroup):
         default = True
         )
 
-    
+
     # UI properties
     matImport_expanded : BoolProperty(
         name = "Click to expand",
@@ -392,6 +397,8 @@ class OT_BatchImportPBR(Operator):
                     n_del += 1
                 else:
                     n_imp += 1
+                mat.asset_mark()
+                mat.asset_generate_preview()
             else:
                 n_skp += 1
         if (n_del > 0) and (n_skp > 0):
