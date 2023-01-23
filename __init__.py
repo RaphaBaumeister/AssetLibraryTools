@@ -2,7 +2,7 @@ bl_info = {
     "name": "AssetLibraryTools",
     "description": "AssetLibraryTools is a free addon which aims to speed up the process of creating asset libraries with the asset browser, This addon is currently very much experimental as is the asset browser in blender.",
     "author": "Lucian James (LJ3D)",
-    "version": (0, 2, 2),
+    "version": (0, 2, 3),
     "blender": (3, 0, 0),
     "location": "3D View > Tools",
     "warning": "Developed in 3.0, primarily the alpha. May be unstable or broken in future versions", # used for warning icon and text in addons panel
@@ -30,6 +30,7 @@ import re
 import os
 import time
 import random
+from threading import Thread
 
 
 # ------------------------------------------------------------------------
@@ -71,13 +72,17 @@ def FindPBRTextureType(fname):
         i+=1
     return PBRTT
 
+    # a custom function that blocks for a moment
 
-# Display a message in the blender UI
-def DisplayMessageBox(message = "", title = "Info", icon = 'INFO'):
-    def draw(self, context):
-        self.layout.label(text=message)
-    bpy.context.window_manager.popup_menu(draw, title = title, icon = icon)
-
+def task(mat):
+    print('This is from another thread')
+    mat.asset_mark()
+    #mat.asset_generate_preview()
+    #time.sleep(6)
+def tasky(mat):
+    print('This is second thread')
+    mat.asset_generate_preview()
+    #time.sleep(6)
 
 # Class with functions for setting up shaders
 class shaderSetup():
@@ -255,7 +260,7 @@ class properties(PropertyGroup):
     mat_import_path : StringProperty(
         name = "Import directory",
         description = "Choose a directory to batch import PBR texture sets from.\nFormat your files like this: ChosenDirectory/PBRTextureName/textureFiles",
-        default = "",
+        default = "D:\\Git\\AssetLibraryTools\\Texturen\\seperate\\",
         maxlen = 1024,
         subtype = 'DIR_PATH'
         )
@@ -361,7 +366,11 @@ class properties(PropertyGroup):
 class OT_BatchImportPBR(Operator):
     bl_label = "Import PBR textures"
     bl_idname = "alt.batchimportpbr"
+
     def execute(self, context):
+        return self.invoke(context, None)
+
+    def invoke(self, context, event):
         scene = context.scene
         tool = scene.assetlibrarytools
         n_imp = 0 # Number of materials imported
@@ -389,7 +398,7 @@ class OT_BatchImportPBR(Operator):
                     mat.cycles.displacement_method = 'BOTH'
                 # Delete the material if it contains no textures
                 hasTex = False
-                for n in mat.node_tree.nodes: 
+                for n in mat.node_tree.nodes:
                     if n.type == 'TEX_IMAGE': # Check if shader contains textures, if yes, then its worth keeping
                         hasTex = True
                 if hasTex == False:
@@ -397,18 +406,16 @@ class OT_BatchImportPBR(Operator):
                     n_del += 1
                 else:
                     n_imp += 1
-                mat.asset_mark()
-                mat.asset_generate_preview()
+                # create a thread
+                thread = Thread(target=task, args=(mat,))
+                # run the thread
+                thread.start()
+                # wait for the thread to finish
+                print('Waiting for the thread...')
+                thread.join()
+
             else:
                 n_skp += 1
-        if (n_del > 0) and (n_skp > 0):
-            DisplayMessageBox("Complete, {0} materials imported, {1} were deleted after import because they contained no textures (No recognised textures were found in the folder), {2} skipped because they already exist".format(n_imp,n_del,n_skp))
-        elif n_skp > 0:
-            DisplayMessageBox("Complete, {0} materials imported. {1} skipped because they already exist".format(n_imp, n_skp))
-        elif n_del > 0:
-            DisplayMessageBox("Complete, {0} materials imported, {1} were deleted after import because they contained no textures (No recognised textures were found in the folder)".format(n_imp,n_del))
-        else:
-            DisplayMessageBox("Complete, {0} materials imported".format(n_imp))
         return{'FINISHED'}
 
 
@@ -432,7 +439,7 @@ class OBJECT_PT_panel(Panel):
         scene = context.scene
         tool = scene.assetlibrarytools
         obj = context.scene.assetlibrarytools
-        
+
         
         # Material import UI
         matImportBox = layout.box()
@@ -500,3 +507,20 @@ def unregister():
 
 if __name__ == "__main__":
     register()
+    # Batch code
+    bpy.ops.alt.batchimportpbr()
+    mat = bpy.data.materials.get("Concrete_07")
+    mat.asset_generate_preview()
+    # create a thread
+    thread = Thread(target=tasky, args=(mat,))
+    # run the thread
+    thread.start()
+    # wait for the thread to finish
+    print('Waiting for the second thread...')
+    thread.join()
+    #for mat in bpy.data.materials:
+     #   #mat.asset_mark()
+     #   mat.asset_generate_preview()
+
+    #mat.diffuse_color = red
+    bpy.ops.wm.save_as_mainfile(filepath='D:\\Git\\AssetLibraryTools\\test_v1.blend')
