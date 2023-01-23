@@ -72,17 +72,6 @@ def FindPBRTextureType(fname):
         i+=1
     return PBRTT
 
-    # a custom function that blocks for a moment
-
-def task(mat):
-    print('This is from another thread')
-    mat.asset_mark()
-    #mat.asset_generate_preview()
-    #time.sleep(6)
-def tasky(mat):
-    print('This is second thread')
-    mat.asset_generate_preview()
-    #time.sleep(6)
 
 # Class with functions for setting up shaders
 class shaderSetup():
@@ -406,13 +395,8 @@ class OT_BatchImportPBR(Operator):
                     n_del += 1
                 else:
                     n_imp += 1
-                # create a thread
-                thread = Thread(target=task, args=(mat,))
-                # run the thread
-                thread.start()
-                # wait for the thread to finish
-                print('Waiting for the thread...')
-                thread.join()
+                mat.asset_mark()
+                mat.asset_generate_preview()
 
             else:
                 n_skp += 1
@@ -509,18 +493,4 @@ if __name__ == "__main__":
     register()
     # Batch code
     bpy.ops.alt.batchimportpbr()
-    mat = bpy.data.materials.get("Concrete_07")
-    mat.asset_generate_preview()
-    # create a thread
-    thread = Thread(target=tasky, args=(mat,))
-    # run the thread
-    thread.start()
-    # wait for the thread to finish
-    print('Waiting for the second thread...')
-    thread.join()
-    #for mat in bpy.data.materials:
-     #   #mat.asset_mark()
-     #   mat.asset_generate_preview()
-
-    #mat.diffuse_color = red
     bpy.ops.wm.save_as_mainfile(filepath='D:\\Git\\AssetLibraryTools\\test_v1.blend')
