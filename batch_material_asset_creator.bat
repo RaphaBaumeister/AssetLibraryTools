@@ -2,10 +2,10 @@
 @echo Start CREATING Assets from Folder
 @echo ############################################################
 
-blender -b -P __init__.py
+blender -b -P SteinbergMaterialImport.py
 
 @echo ############################################################
 @echo FINISHED
 @echo ############################################################
 
-pause
+PAUSE
