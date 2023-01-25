@@ -31,10 +31,6 @@ import os
 import time
 import random
 import shutil
-import numpy as np
-import functools
-
-from threading import Thread
 
 
 # ------------------------------------------------------------------------
@@ -56,32 +52,11 @@ nameLists = [diffNames, sssNames, metNames, specNames, roughNames, normNames, di
 texTypes = ["diff", "sss", "met", "spec", "rough", "norm", "disp", "alpha", "emission"]
 
 
-
-
-def ddsleep_until_previews_are_done(mat):
-    preview = mat.preview
-    if preview is None:
-        print("false")
-        return False
-    # If the preview is all black, means it was not generated :
-    arr = np.zeros((preview.image_size[0] * preview.image_size[1]) * 4, dtype=np.float32)
-    preview.image_pixels_float.foreach_get(arr)
-    if np.all((arr == 0)):
-        return False
-    else:
-        return True
-
-
-def tasky(mat):
-    print('This is second thread')
-    mat.asset_generate_preview()
-
-
-
 # Find the type of PBR texture a file is based on its name
 def FindPBRTextureType(fname):
     PBRTT = None
     startname = fname
+    '''
     # Remove digits
     fname = ''.join(i for i in fname if not i.isdigit())
     # Separate CamelCase by space
@@ -92,9 +67,10 @@ def FindPBRTextureType(fname):
         fname = fname.replace(sep, ' ')
     # Set entire string to lower case
     fname = fname.lower()
-
+    '''
     file_name = startname.split(".")[0]
-    file_name = file_name.rsplit("_", 1)[1]
+    if len(file_name.rsplit('_')) > 1:
+        file_name = file_name.rsplit("_", 1)[1]
 
     # Find PBRTT
     i = 0
@@ -462,7 +438,7 @@ class OT_BatchImportPBR(Operator):
                 else:
                     n_imp += 1
                 mat.asset_mark()
-                mat.asset_generate_preview()
+                #mat.asset_generate_preview()
 
             else:
                 n_skp += 1
@@ -589,18 +565,11 @@ def unregister():
 if __name__ == "__main__":
     register()
     # Batch code
-    # call operators
-    bpy.ops.alt.groupfilesbyname()
-    bpy.ops.alt.batchimportpbr()
-    #create blend file
     directory = os.getcwd()
     picturename = "created_material_assets.blend"
     file_target = os.path.join(directory, picturename)
-
+    bpy.ops.alt.groupfilesbyname()
+    bpy.ops.alt.batchimportpbr()
     #bpy.ops.alt.previewgenerate()
 
-    #while (bpy.app.is_job_running("RENDER_PREVIEW")):
-    #    print("ich warte")
-    #print("ENDEEE")
     bpy.ops.wm.save_as_mainfile(filepath=file_target)
-
