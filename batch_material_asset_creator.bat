@@ -8,4 +8,3 @@ blender -b -P SteinbergMaterialImport.py
 @echo FINISHED
 @echo ############################################################
 
-PAUSE
