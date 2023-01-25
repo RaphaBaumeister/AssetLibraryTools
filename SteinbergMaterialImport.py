@@ -2,7 +2,7 @@ bl_info = {
     "name": "Steinberg Material Import",
     "description": "AssetLibraryTools is a free addon which aims to speed up the process of creating asset libraries with the asset browser, This addon is currently very much experimental as is the asset browser in blender.",
     "author": "Lucian James (LJ3D), adapted by RB",
-    "version": (0, 2, 4),
+    "version": (0, 2, 5),
     "blender": (3, 3, 0),
     "location": "View3D > Toolbar > Steinberg",
     #"warning": "Developed in 3.0, primarily the alpha. May be unstable or broken in future versions", # used for warning icon and text in addons panel
@@ -438,7 +438,7 @@ class OT_BatchImportPBR(Operator):
                 else:
                     n_imp += 1
                 mat.asset_mark()
-                #mat.asset_generate_preview()
+                mat.asset_generate_preview()
 
             else:
                 n_skp += 1
