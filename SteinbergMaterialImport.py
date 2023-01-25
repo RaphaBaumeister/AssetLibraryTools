@@ -2,7 +2,7 @@ bl_info = {
     "name": "Steinberg Material Import",
     "description": "AssetLibraryTools is a free addon which aims to speed up the process of creating asset libraries with the asset browser, This addon is currently very much experimental as is the asset browser in blender.",
     "author": "Lucian James (LJ3D), adapted by RB",
-    "version": (0, 2, 5),
+    "version": (0, 2, 6),
     "blender": (3, 3, 0),
     "location": "View3D > Toolbar > Steinberg",
     #"warning": "Developed in 3.0, primarily the alpha. May be unstable or broken in future versions", # used for warning icon and text in addons panel
@@ -32,6 +32,8 @@ import time
 import random
 import shutil
 
+from threading import Thread
+
 
 # ------------------------------------------------------------------------
 #    Stuff
@@ -50,6 +52,9 @@ emissiveNames = ["emissive", "emission"]
 
 nameLists = [diffNames, sssNames, metNames, specNames, roughNames, normNames, dispNames, alphaNames, emissiveNames]
 texTypes = ["diff", "sss", "met", "spec", "rough", "norm", "disp", "alpha", "emission"]
+
+def task(mat):
+    mat.asset_generate_preview()
 
 
 # Find the type of PBR texture a file is based on its name
@@ -76,7 +81,7 @@ def FindPBRTextureType(fname):
     i = 0
     for nameList in nameLists:
         for name in nameList:
-            if name in file_name:
+            if name in file_name.lower():
                 PBRTT = texTypes[i]
         i+=1
     return PBRTT
@@ -362,7 +367,7 @@ class properties(PropertyGroup):
 # ------------------------------------------------------------------------
 
 class OT_PreviewGenerator(Operator):
-    bl_label = "Generate Preview for Assets"
+    bl_label = "Generate Preview for All Materials"
     bl_idname = "alt.previewgenerate"
 
     def execute(self, context):
@@ -381,11 +386,10 @@ class OT_PreviewGenerator(Operator):
             if i >= idx_end:
                 break
             # create a thread
-            thread = Thread(target=tasky, args=(mat,))
+            thread = Thread(target=task, args=(mat,))
             # run the thread
             thread.start()
             # wait for the thread to finish
-            print('Waiting for the second thread...')
             thread.join()
 
         return{'FINISHED'}
