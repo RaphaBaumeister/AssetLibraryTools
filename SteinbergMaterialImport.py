@@ -31,6 +31,8 @@ import os
 import time
 import random
 import shutil
+import numpy as np
+import functools
 
 from threading import Thread
 
@@ -40,13 +42,13 @@ from threading import Thread
 # ------------------------------------------------------------------------
 
 
-diffNames = ["diffuse", "diff", "albedo", "base", "col", "color"]
+diffNames = ["diffuse", "diff", "albedo", "base", "col", "color", "d"]
 sssNames = ["sss", "subsurface"]
 metNames = ["metallic", "metalness", "metal", "mtl", "met"]
 specNames = ["specularity", "specular", "spec", "spc"]
-roughNames = ["roughness", "rough", "rgh", "gloss", "glossy", "glossiness"]
-normNames = ["normal", "nor", "nrm", "nrml", "norm"]
-dispNames = ["displacement", "displace", "disp", "dsp", "height", "heightmap", "bump", "bmp"]
+roughNames = ["roughness", "rough", "rgh", "gloss", "glossy", "glossiness", "r"]
+normNames = ["normal", "nor", "nrm", "nrml", "norm", "n"]
+dispNames = ["displacement", "displace", "disp", "dsp", "height", "heightmap", "bump", "bmp", "b", "dp"]
 alphaNames = ["alpha", "opacity"]
 emissiveNames = ["emissive", "emission"]
 
@@ -54,9 +56,32 @@ nameLists = [diffNames, sssNames, metNames, specNames, roughNames, normNames, di
 texTypes = ["diff", "sss", "met", "spec", "rough", "norm", "disp", "alpha", "emission"]
 
 
+
+
+def ddsleep_until_previews_are_done(mat):
+    preview = mat.preview
+    if preview is None:
+        print("false")
+        return False
+    # If the preview is all black, means it was not generated :
+    arr = np.zeros((preview.image_size[0] * preview.image_size[1]) * 4, dtype=np.float32)
+    preview.image_pixels_float.foreach_get(arr)
+    if np.all((arr == 0)):
+        return False
+    else:
+        return True
+
+
+def tasky(mat):
+    print('This is second thread')
+    mat.asset_generate_preview()
+
+
+
 # Find the type of PBR texture a file is based on its name
 def FindPBRTextureType(fname):
     PBRTT = None
+    startname = fname
     # Remove digits
     fname = ''.join(i for i in fname if not i.isdigit())
     # Separate CamelCase by space
@@ -67,11 +92,15 @@ def FindPBRTextureType(fname):
         fname = fname.replace(sep, ' ')
     # Set entire string to lower case
     fname = fname.lower()
+
+    file_name = startname.split(".")[0]
+    file_name = file_name.rsplit("_", 1)[1]
+
     # Find PBRTT
     i = 0
     for nameList in nameLists:
         for name in nameList:
-            if name in fname:
+            if name in file_name:
                 PBRTT = texTypes[i]
         i+=1
     return PBRTT
@@ -356,6 +385,36 @@ class properties(PropertyGroup):
 #    Operators
 # ------------------------------------------------------------------------
 
+class OT_PreviewGenerator(Operator):
+    bl_label = "Generate Preview for Assets"
+    bl_idname = "alt.previewgenerate"
+
+    def execute(self, context):
+        return self.invoke(context, None)
+
+    def invoke(self, context, event):
+        idx_start, idx_end = 0, 500  # That's your batch numbers
+        i = -1
+        for mat in bpy.data.materials:
+            print(mat.name)
+            if not mat.asset_data:
+                continue
+            i += 1
+            if i < idx_start:
+                continue
+            if i >= idx_end:
+                break
+            # create a thread
+            thread = Thread(target=tasky, args=(mat,))
+            # run the thread
+            thread.start()
+            # wait for the thread to finish
+            print('Waiting for the second thread...')
+            thread.join()
+
+        return{'FINISHED'}
+
+
 class OT_BatchImportPBR(Operator):
     bl_label = "Import PBR textures"
     bl_idname = "alt.batchimportpbr"
@@ -431,7 +490,8 @@ class OP_GroupFilesByName(Operator):
                                   '.gif', '.ppm', '.xbm', '.tiff', '.rgb', '.pgm', '.png', '.pnm', '.exr')):
                 continue
             # Get the name of the file without the content behind the last underscore and the extension
-            file_name = file.split("_")[0].split(".")[0]
+            file_name = file.split(".")[0]
+            file_name = file_name.rsplit("_", 1)[0]
             # Create a new folder with the file name if it doesn't exist
             if not os.path.exists(os.path.join(mat_directory, file_name)):
                 os.makedirs(os.path.join(mat_directory, file_name))
@@ -499,6 +559,7 @@ class OBJECT_PT_panel(Panel):
                 layout.prop(tool, "import_alpha")
                 layout.prop(tool, "import_norm")
                 layout.prop(tool, "import_disp")
+            layout.operator("alt.previewgenerate")
 
 
 # ------------------------------------------------------------------------
@@ -510,6 +571,7 @@ classes = (
     OT_BatchImportPBR,
     OBJECT_PT_panel,
     OP_GroupFilesByName,
+    OT_PreviewGenerator,
 )
 
 def register():
@@ -534,4 +596,11 @@ if __name__ == "__main__":
     directory = os.getcwd()
     picturename = "created_material_assets.blend"
     file_target = os.path.join(directory, picturename)
+
+    #bpy.ops.alt.previewgenerate()
+
+    #while (bpy.app.is_job_running("RENDER_PREVIEW")):
+    #    print("ich warte")
+    #print("ENDEEE")
     bpy.ops.wm.save_as_mainfile(filepath=file_target)
+
