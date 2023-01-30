@@ -76,12 +76,11 @@ def FindPBRTextureType(fname):
     file_name = startname.split(".")[0]
     if len(file_name.rsplit('_')) > 1:
         file_name = file_name.rsplit("_", 1)[1]
-
     # Find PBRTT
     i = 0
     for nameList in nameLists:
         for name in nameList:
-            if name in file_name.lower():
+            if name == file_name.lower():
                 PBRTT = texTypes[i]
         i+=1
     return PBRTT
@@ -151,8 +150,8 @@ class shaderSetup():
                 displacementTexture.colorspace_settings.name = 'Non-Color'
         
         # Create base nodes
-        node_output = shaderSetup.createNode(mat, "ShaderNodeOutputMaterial", "node_output", (250,0))
-        node_principled = shaderSetup.createNode(mat, "ShaderNodeBsdfPrincipled", "node_principled", (-300,0))
+        node_output = shaderSetup.createNode(mat, "ShaderNodeOutputMaterial", "node_output", (550,0))
+        node_principled = shaderSetup.createNode(mat, "ShaderNodeBsdfPrincipled", "node_principled", (0,0))
         links.new(node_principled.outputs['BSDF'], node_output.inputs['Surface'])
         node_mapping = shaderSetup.createNode(mat, "ShaderNodeMapping", "node_mapping", (-1300,0))
         node_texCoord = shaderSetup.createNode(mat, "ShaderNodeTexCoord", "node_texCoord", (-1500,0))
@@ -202,9 +201,12 @@ class shaderSetup():
             if tool.add_extranodes:
                 node_imTexRoughnessColourRamp = shaderSetup.createNode(mat, "ShaderNodeValToRGB", "node_imTexRoughnessColourRamp", (-550,300-(300*imported_tex_nodes)))
                 links.new(node_imTexRoughness.outputs['Color'], node_imTexRoughnessColourRamp.inputs['Fac'])
-                links.new(node_imTexRoughnessColourRamp.outputs['Color'], node_principled.inputs['Roughness'])
+                node_imTexRoughnessColourMix = shaderSetup.createNode(mat, "ShaderNodeMixRGB", "node_imTexRoughnessColourMix", (-250,300-(300*imported_tex_nodes)))
+                links.new(node_imTexRoughnessColourRamp.outputs['Color'], node_imTexRoughnessColourMix.inputs['Color1'])
+                links.new(node_imTexRoughnessColourMix.outputs['Color'], node_principled.inputs['Roughness'])
             else:
                 links.new(node_imTexRoughness.outputs['Color'], node_principled.inputs['Roughness'])
+
             links.new(node_mapping.outputs['Vector'], node_imTexRoughness.inputs['Vector'])
             shaderSetup.setMapping(node_imTexRoughness)
             imported_tex_nodes += 1
@@ -240,7 +242,7 @@ class shaderSetup():
             node_imTexDisplacement.image = displacementTexture
             node_imTexDisplacement.interpolation = 'Smart'
             if normalTexture != None:
-                node_displacement = shaderSetup.createNode(mat, "ShaderNodeDisplacement", "node_displacement", (-200,-600))
+                node_displacement = shaderSetup.createNode(mat, "ShaderNodeDisplacement", "node_displacement", (-200,-800))
                 links.new(node_imTexDisplacement.outputs['Color'], node_displacement.inputs['Height'])
                 links.new(node_displacement.outputs['Displacement'], node_output.inputs['Displacement'])
             else:
