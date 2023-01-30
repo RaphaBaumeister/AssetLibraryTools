@@ -2,7 +2,7 @@ bl_info = {
     "name": "Steinberg Material Import",
     "description": "AssetLibraryTools is a free addon which aims to speed up the process of creating asset libraries with the asset browser, This addon is currently very much experimental as is the asset browser in blender.",
     "author": "Lucian James (LJ3D), adapted by RB",
-    "version": (0, 2, 6),
+    "version": (0, 2, 7),
     "blender": (3, 3, 0),
     "location": "View3D > Toolbar > Steinberg",
     #"warning": "Developed in 3.0, primarily the alpha. May be unstable or broken in future versions", # used for warning icon and text in addons panel
@@ -40,7 +40,7 @@ from threading import Thread
 # ------------------------------------------------------------------------
 
 
-diffNames = ["diffuse", "diff", "albedo", "base", "col", "color", "d"]
+diffNames = ["diffuse", "diff", "albedo", "base", "col", "color", "d", "basecolor"]
 sssNames = ["sss", "subsurface"]
 metNames = ["metallic", "metalness", "metal", "mtl", "met"]
 specNames = ["specularity", "specular", "spec", "spc"]
